@@ -2,6 +2,7 @@ class Node {
   constructor(nodeValue = null, nextNode = null) {
     this.value = nodeValue;
     this.next = nextNode;
+    this.prev = null;
   }
 }
 
@@ -16,13 +17,17 @@ export class LinkedList {
       this.#listTail = this.#listHead;
     } else {
       this.#listTail.next = new Node(value);
+      this.#listTail.next.prev = this.#listTail;
       this.#listTail = this.#listTail.next;
     }
     this.#size++;
   }
 
   prepend(value) {
-    this.#listHead = new Node(value, this.#listHead);
+    let newNode =  new Node(value);
+    newNode.next = this.#listHead;
+    this.#listHead.prev = newNode;
+    this.#listHead = newNode;
     this.#size++;
   }
 
@@ -56,15 +61,12 @@ export class LinkedList {
   }
 
   pop() {
-    let node = this.#listHead;
-    if (node !== null) {
+    if (this.#listHead !== null) {
       if (this.#size === 1) {
         this.#listHead = null;
         this.#listTail = null;
       } else {
-        while (node.next.next !== null) {
-          node = node.next;
-        }
+        let node = this.#listTail.prev;
         node.next = null;
         this.#listTail = node;
       }
@@ -106,14 +108,14 @@ export class LinkedList {
     let strNodes = '';
     if (node !== null) {
       while (node !== null) {
-        strNodes = strNodes + `( ${node.value} ) -> `;
+        strNodes = strNodes + `( ${node.value} ) <-> `;
         node = node.next;
       }
     }
     return strNodes + 'null';
   }
 
-  insertAt(value, index = 0) {
+  insertAt(value, index) {
     if (index <= 0) {
       this.prepend(value);
     } else if (index >= this.#size) {
@@ -123,15 +125,18 @@ export class LinkedList {
     }
   }
 
-  insertMidIdx(value, index = 0) {
+  insertMidIdx(value, index) {
     if (this.#listHead === null) {
       this.#listHead = new Node(value);
+      this.#listTail = this.#listHead;
       return;
     }
-    let node = this.#listHead;
-    node = this.at(index - 1);
-    let newNode = new Node(value, node.next);
-    node.next = newNode;
+    let newNode = new Node(value);
+    let node = this.at(index);
+    newNode.prev = node.prev;
+    node.prev.next = newNode;
+    node.prev = newNode;
+    newNode.next = node;
     this.#size++;
   }
 
@@ -139,12 +144,14 @@ export class LinkedList {
     if (this.#listHead !== null) {
       if (index <= 0) {
         this.#listHead = this.#listHead.next;
+        this.#listHead.prev = null;
         this.#size--;
       } else if (index >= this.#size - 1) {
         this.pop();
       } else {
-        let node = this.at(index - 1);
-        node.next = node.next.next;
+        let node = this.at(index);
+        node.prev.next = node.next;
+        node.next.prev = node.prev;
         this.#size--;
       }
     }
@@ -155,9 +162,11 @@ export class LinkedList {
       throw new Error('Callback is required');
     }
     let node = this.#listHead;
+    let prevNode = null;
     if (node !== null) {
       while (node !== null) {
-        callback(node);
+        callback(node, prevNode);
+        prevNode = node;
         node = node.next;
       }
     }
