@@ -1,0 +1,1 @@
+Here, I implemented a linked list in JavaScript to better understand how it works.
